@@ -1,0 +1,6 @@
+@Fitto.Api_HostAddress = http://localhost:5283
+
+GET {{Fitto.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
