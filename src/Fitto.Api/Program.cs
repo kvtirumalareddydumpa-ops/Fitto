@@ -1,41 +1,70 @@
+using System.Text.Json.Serialization;
+using Fitto.Api.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddDbContext<FittoDbContext>(o =>
+    o.UseNpgsql(builder.Configuration.GetConnectionString("Fitto")));
+builder.Services.AddScoped<PersonalRecordService>();
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment()) app.MapOpenApi();
+
+// seed a demo user and some exercises on first run
+using (var scope = app.Services.CreateScope())
 {
-    app.MapOpenApi();
+    var db = scope.ServiceProvider.GetRequiredService<FittoDbContext>();
+    if (!db.Exercises.Any())
+    {
+        db.Users.Add(new User { Name = "Demo", Email = "demo@fitto.app" });
+        db.Exercises.AddRange(
+            new Exercise { Name = "Bench Press", TrackingType = TrackingType.WeightReps },
+            new Exercise { Name = "Running", TrackingType = TrackingType.DistanceTime },
+            new Exercise { Name = "Pull-up", TrackingType = TrackingType.BodyweightReps },
+            new Exercise { Name = "Plank", TrackingType = TrackingType.TimeHold });
+        db.SaveChanges();
+    }
 }
 
-app.UseHttpsRedirection();
+app.MapGet("/exercises", (FittoDbContext db) => db.Exercises.ToListAsync());
 
-var summaries = new[]
+// start a workout
+app.MapPost("/users/{userId:int}/sessions", async (int userId, FittoDbContext db) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var session = new WorkoutSession { UserId = userId, StartedAt = DateTime.UtcNow };
+    db.WorkoutSessions.Add(session);
+    await db.SaveChangesAsync();
+    return Results.Ok(new { session.Id });
+});
 
-app.MapGet("/weatherforecast", () =>
+// log a set and check for new PRs
+app.MapPost("/sessions/{sessionId:int}/sets",
+    async (int sessionId, LoggedSet set, FittoDbContext db, PersonalRecordService prs) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    var session = await db.WorkoutSessions.FindAsync(sessionId);
+    if (session is null) return Results.NotFound("Session not found");
+
+    var exercise = await db.Exercises.FindAsync(set.ExerciseId);
+    if (exercise is null) return Results.BadRequest("Unknown exercise");
+
+    set.WorkoutSessionId = sessionId;
+    db.LoggedSets.Add(set);
+    var newPrs = await prs.CheckAndUpdateAsync(session.UserId, set, exercise.TrackingType);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        set.Id,
+        NewPersonalRecords = newPrs.Select(p => new { p.RecordType, p.Value })
+    });
+});
+
+app.MapGet("/users/{userId:int}/records", (int userId, FittoDbContext db) =>
+    db.PersonalRecords.Where(p => p.UserId == userId).ToListAsync());
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
