@@ -3,16 +3,20 @@ using Fitto.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter());
+    });
 builder.Services.AddOpenApi();
-builder.Services.AddDbContext<FittoDbContext>(o =>
-    o.UseNpgsql(builder.Configuration.GetConnectionString("Fitto")));
+builder.Services.AddDbContext<FittoDbContext>(o => o.UseNpgsql(builder.Configuration.GetConnectionString("Fitto")));
 builder.Services.AddScoped<PersonalRecordService>();
-builder.Services.ConfigureHttpJsonOptions(o =>
-    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 var app = builder.Build();
-
+app.MapControllers(); 
 if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
 // seed a demo user and some exercises on first run
@@ -31,7 +35,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.MapGet("/exercises", (FittoDbContext db) => db.Exercises.ToListAsync());
+
 
 // start a workout
 app.MapPost("/users/{userId:int}/sessions", async (int userId, FittoDbContext db) =>
