@@ -60,6 +60,12 @@ namespace Fitto.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("DefaultRestSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MuscleGroup")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -67,6 +73,9 @@ namespace Fitto.Api.Migrations
                     b.Property<string>("TrackingType")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

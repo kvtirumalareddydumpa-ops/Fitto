@@ -28,6 +28,9 @@ public class Exercise
     public int Id { get; set; }
     public string Name { get; set; } = "";
     public TrackingType TrackingType { get; set; }
+    public string? MuscleGroup { get; set; }
+    public int DefaultRestSeconds { get; set; } = 120;
+    public int? UserId { get; set; }   // null = built-in, set = user's custom exercise    
 }
 
 public class PersonalRecord // one row per user + exercise + record type
