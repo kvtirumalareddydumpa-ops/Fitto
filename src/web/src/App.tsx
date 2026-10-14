@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import type { Exercise, LogSetResult, NewSet } from '@/lib/api'
+import { Card } from '@/components/ui/Card'
+import { Button } from './components/ui/Button'
+import { Field } from './components/ui/Field'
 
 const USER_ID = 1 // demo user until we add login
 
@@ -50,8 +53,7 @@ export default function App() {
     },
   })
 
-  const exerciseName = (id: number) =>
-    exercises.data?.find((e) => e.id === id)?.name ?? `#${id}`
+  const exerciseName = (id: number) => exercises.data?.find((e) => e.id === id)?.name ?? `#${id}`
 
   function handleLogged(result: LogSetResult, set: NewSet) {
     setLoggedSets((prev) => [
@@ -75,31 +77,25 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto max-w-2xl space-y-6 p-6">
+    <div className="min-h-screen">
+      <div className="mx-auto w-full max-w-md space-y-6 px-5 py-6 md:max-w-2xl md:px-8">
         <header className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Fitto</h1>
-          <button
-            onClick={() => startSession.mutate()}
-            disabled={startSession.isPending}
-            className="rounded-lg bg-emerald-600 px-4 py-2 font-medium hover:bg-emerald-500 disabled:opacity-50"
-          >
+          <h1 className="font-display text-3xl font-bold tracking-tight">Fitto</h1>
+          <Button onClick={() => startSession.mutate()} disabled={startSession.isPending}>
             {sessionId ? 'New workout' : 'Start workout'}
-          </button>
+          </Button>
         </header>
 
         {exercises.isError && (
-          <p className="text-red-400">Can't reach the API. Is dotnet watch running?</p>
+          <p className="text-danger">Can't reach the API. Is dotnet watch running?</p>
         )}
 
         {prMessage && (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-amber-300">
-            🏆 {prMessage}
-          </div>
+          <div className="border-pr/40 bg-pr-surface text-pr rounded-lg border">🏆 {prMessage}</div>
         )}
 
         {sessionId && exercises.data && (
-          <section className="space-y-4 rounded-xl bg-slate-900 p-5">
+          <Card className="space-y-4">
             <h2 className="font-semibold">Workout #{sessionId}</h2>
             <SetForm
               exercises={exercises.data}
@@ -109,32 +105,30 @@ export default function App() {
             />
             <ul className="space-y-1 text-sm">
               {loggedSets.map((s) => (
-                <li key={s.id} className="flex justify-between rounded bg-slate-800 px-3 py-2">
+                <li key={s.id} className="bg-surface-raised flex justify-between rounded px-3 py-2">
                   <span>{s.exerciseName}</span>
-                  <span className="text-slate-400">{s.summary}</span>
+                  <span className="text-muted">{s.summary}</span>
                 </li>
               ))}
             </ul>
-          </section>
+          </Card>
         )}
 
-        <section className="rounded-xl bg-slate-900 p-5">
+        <Card>
           <h2 className="mb-3 font-semibold">Personal records</h2>
-          {records.isLoading && <p className="text-slate-400">Loading…</p>}
-          {records.data?.length === 0 && (
-            <p className="text-slate-400">No records yet. Log a set!</p>
-          )}
+          {records.isLoading && <p className="text-muted">Loading…</p>}
+          {records.data?.length === 0 && <p className="text-muted">No records yet. Log a set!</p>}
           <ul className="space-y-1 text-sm">
             {records.data?.map((r) => (
-              <li key={r.id} className="flex justify-between rounded bg-slate-800 px-3 py-2">
+              <li key={r.id} className="bg-surface-raised flex justify-between rounded px-3 py-2">
                 <span>
                   {exerciseName(r.exerciseId)} · {recordLabels[r.recordType] ?? r.recordType}
                 </span>
-                <span className="font-semibold text-emerald-400">{r.value}</span>
+                <span className="text-primary font-semibold">{r.value}</span>
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       </div>
     </div>
   )
@@ -186,7 +180,7 @@ function SetForm({
       <select
         value={exerciseId}
         onChange={(e) => setExerciseId(Number(e.target.value))}
-        className="w-full rounded-lg bg-slate-800 px-3 py-2"
+        className="bg-surface-raised w-full rounded-lg px-3 py-2"
       >
         {exercises.map((ex) => (
           <option key={ex.id} value={ex.id}>
@@ -196,48 +190,36 @@ function SetForm({
       </select>
 
       <div className="grid grid-cols-2 gap-3">
-        {type === 'WeightReps' && <Field label="Weight (kg)" value={weight} onChange={setWeight} />}
+        {type === 'WeightReps' && (
+          <Field
+            label="Weight (kg)"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+          ></Field>
+        )}
         {(type === 'WeightReps' || type === 'BodyweightReps') && (
-          <Field label="Reps" value={reps} onChange={setReps} />
+          <Field label="Reps" value={reps} onChange={(e) => setReps(e.target.value)}></Field>
         )}
         {type === 'DistanceTime' && (
-          <Field label="Distance (m)" value={distance} onChange={setDistance} />
+          <Field
+            label="Distance (m)"
+            value={distance}
+            onChange={(e) => setDistance(e.target.value)}
+          ></Field>
         )}
         {(type === 'DistanceTime' || type === 'TimeHold') && (
-          <Field label="Time (seconds)" value={seconds} onChange={setSeconds} />
+          <Field
+            label="Time (seconds)"
+            value={seconds}
+            onChange={(e) => setSeconds(e.target.value)}
+          ></Field>
         )}
       </div>
 
-      <button
-        onClick={submit}
-        disabled={logSet.isPending}
-        className="w-full rounded-lg bg-slate-100 py-2 font-medium text-slate-900 hover:bg-white disabled:opacity-50"
-      >
+      <Button onClick={submit} disabled={logSet.isPending} size="lg" variant="secondary">
         Log set
-      </button>
-      {logSet.isError && <p className="text-sm text-red-400">{logSet.error.message}</p>}
+      </Button>
+      {logSet.isError && <p className="text-danger text-sm">{logSet.error.message}</p>}
     </div>
-  )
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-slate-400">{label}</span>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg bg-slate-800 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-emerald-500"
-      />
-    </label>
   )
 }

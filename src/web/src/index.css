@@ -1,1 +1,51 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* 1. Raw values: the only place real colours appear */
+:root {
+  --page: oklch(12.9% 0.041 264.7);
+  --surface: oklch(20.8% 0.04 265.8);
+  --surface-raised: oklch(27.9% 0.037 260);
+  --line: oklch(27.9% 0.037 260);
+  --line-strong: oklch(37.2% 0.039 257.3);
+  --fg: oklch(96.8% 0.007 247.9);
+  --muted: oklch(71.1% 0.035 256.8);
+  --primary: oklch(77.3% 0.153 163.2);
+  --on-primary: oklch(26.2% 0.049 172.6);
+  --pr: oklch(83.7% 0.164 84.4);
+  --pr-surface: oklch(23.4% 0.042 71.3);
+  --danger: oklch(71.1% 0.166 22.2);
+}
+
+/* 2. Map them to Tailwind utilities */
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-pr: var(--pr);
+  --color-pr-surface: var(--pr-surface);
+  --color-danger: var(--danger);
+}
+
+/* 3. Fonts and shapes */
+@theme {
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'DM Sans', system-ui, sans-serif;
+  --radius-card: 1.25rem;
+  --radius-control: 0.75rem;
+}
+
+/* 4. Page defaults */
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-page text-fg font-sans antialiased;
+  }
+}
